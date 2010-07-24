@@ -13,8 +13,8 @@ import Foreign.C.Types (CInt)
 
 import System.Linux.Netlink.C
 
-data Message = GetInterface ArpHardware Word32 Word32
-             | NewInterface ArpHardware Word32 Word32
+data Message = GetInterface LinkType Word32 Word32
+             | NewInterface LinkType Word32 Word32
              | Success
              | Error CInt String
              | Other MessageType
@@ -22,8 +22,8 @@ data Message = GetInterface ArpHardware Word32 Word32
 
 instance Serialize Message where
     put (GetInterface deviceType interfaceIndex linkFlags) =
-        putPacket MSG_GetLink [MSG_F_Request] $ runPut $ do
-            putWord8 (_fromEnum Unspec)
+        putPacket RtmGetlink [NlmFRequest] $ runPut $ do
+            putWord8 (_fromEnum AfUnspec)
             putWord8 0
             putWord16host (_fromEnum deviceType)
             putWord32host interfaceIndex
@@ -37,10 +37,10 @@ instance Serialize Message where
         msgTy <- _toEnum <$> getWord16host
         skip 10
         case msgTy of
-            MSG_Error   -> getError 
-            MSG_GetLink -> getInterface
-            MSG_NewLink -> newInterface
-            _           -> return $ Other msgTy
+            NlmsgError -> getError
+            RtmGetlink -> getInterface
+            RtmNewlink -> newInterface
+            _          -> return $ Other msgTy
       where
         getError = do
             code <- negate . fromIntegral <$> getWord32host
