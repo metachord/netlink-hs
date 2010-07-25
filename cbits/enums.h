@@ -222,3 +222,15 @@ enum LinkAttrType {
   IflaWeight = IFLA_WEIGHT,
   IflaWireless = IFLA_WIRELESS,
 };
+
+enum AddrFlags {
+  IfaFDadfailed = IFA_F_DADFAILED,
+  IfaFDeprecated = IFA_F_DEPRECATED,
+  IfaFHomeaddress = IFA_F_HOMEADDRESS,
+  IfaFNodad = IFA_F_NODAD,
+  IfaFOptimistic = IFA_F_OPTIMISTIC,
+  IfaFPermanent = IFA_F_PERMANENT,
+  IfaFSecondary = IFA_F_SECONDARY,
+  IfaFTemporary = IFA_F_TEMPORARY,
+  IfaFTentative = IFA_F_TENTATIVE,
+};

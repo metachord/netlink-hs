@@ -38,6 +38,7 @@ generate = concat <$> sequence
                 ("NLMSG_" `isPrefixOf` d || "RTM_" `isPrefixOf` d))
        , defsToEnum "AddressFamily" ["sys/socket.h"] ("AF_" `isPrefixOf`)
        , defsToEnum "LinkAttrType" ["linux/if_link.h"] ("IFLA_" `isPrefixOf`)
+       , defsToEnum "AddrFlags" ["linux/if_addr.h"] ("IFA_F_" `isPrefixOf`)
        ]
 
 defsToEnum :: String -> [String] -> (String -> Bool) -> IO String
