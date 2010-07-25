@@ -137,6 +137,8 @@ class Enum a => Flags a where
 
 instance Flags MessageFlags
 instance Flags LinkFlags
+instance Flags AddrFlags
+instance Flags RouteFlags
 
 data IoVec = IoVec (Ptr (), Int)
 
