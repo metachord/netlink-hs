@@ -68,6 +68,9 @@ getMessage NlmsgError = getMessageError
 getMessage RtmNewlink = getMessageLink
 getMessage RtmDellink = getMessageLink
 getMessage RtmGetlink = getMessageLink
+getMessage RtmNewaddr = getMessageAddr
+getMessage RtmDeladdr = getMessageAddr
+getMessage RtmGetaddr = getMessageAddr
 getMessage a          = error $ "Can't decode message " ++ show a
 
 getMessageError :: Get Message
@@ -84,6 +87,15 @@ getMessageLink = do
     flags <- g32
     skip 4
     return $ LinkMsg ty idx flags
+
+getMessageAddr :: Get Message
+getMessageAddr = do
+    fam <- cToEnum <$> g8
+    maskLen <- g8
+    flags <- g8
+    scope <- cToEnum <$> g8
+    idx <- g32
+    return $ AddrMsg fam maskLen flags scope idx
 
 getAttributes :: Get Attributes
 getAttributes = return Attributes
@@ -113,6 +125,12 @@ putMessage (LinkMsg ty idx flags) = do
     p32 idx
     p32 flags
     p32 0xFFFFFFFF
+putMessage (AddrMsg fam maskLen flags scope idx) = do
+    p8 (cFromEnum fam)
+    p8 maskLen
+    p8 flags
+    p8 (cFromEnum scope)
+    p32 idx
 putMessage _ = error "Can't transmit this message to the kernel."
 
 putAttributes :: Attributes -> Put
