@@ -32,7 +32,7 @@ import System.Posix.Process (getProcessID)
 typedef int64_t aligned_u64;
 #endc
 
-#include "../../../../../cbits/enums.h"
+#include "enums.h"
 
 #c
 typedef struct msghdr msdhdr;

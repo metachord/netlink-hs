@@ -24,5 +24,6 @@ Library
                      unix >=2.4 && <2.5
   Other-modules:     C2HS
   Build-tools:       c2hs > 0.16
-  Ghc-options:       -Wall -fno-warn-orphans -fwarn-tabs
+  Ghc-options:       -Wall -fwarn-tabs
   Ghc-prof-options:  -auto-all
+  Include-dirs:      cbits
