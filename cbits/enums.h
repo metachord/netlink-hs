@@ -1,6 +1,7 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <linux/if_arp.h>
+#include <linux/if_link.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <sys/socket.h>
@@ -43,6 +44,7 @@ enum LinkFlags {
   IffWanHdlc = IFF_WAN_HDLC,
   IffXmitDstRelease = IFF_XMIT_DST_RELEASE,
 };
+
 enum LinkType {
   ArphrdAdapt = ARPHRD_ADAPT,
   ArphrdAppletlk = ARPHRD_APPLETLK,
@@ -105,6 +107,7 @@ enum LinkType {
   ArphrdVoid = ARPHRD_VOID,
   ArphrdX25 = ARPHRD_X25,
 };
+
 enum MessageFlags {
   NlmFAck = NLM_F_ACK,
   NlmFAppend = NLM_F_APPEND,
@@ -118,6 +121,7 @@ enum MessageFlags {
   NlmFRequest = NLM_F_REQUEST,
   NlmFRoot = NLM_F_ROOT,
 };
+
 enum MessageType {
   NlmsgDone = NLMSG_DONE,
   NlmsgError = NLMSG_ERROR,
@@ -164,6 +168,7 @@ enum MessageType {
   RtmSetlink = RTM_SETLINK,
   RtmSetneightbl = RTM_SETNEIGHTBL,
 };
+
 enum AddressFamily {
   AfAppletalk = AF_APPLETALK,
   AfAsh = AF_ASH,
@@ -204,4 +209,16 @@ enum AddressFamily {
   AfUnspec = AF_UNSPEC,
   AfWanpipe = AF_WANPIPE,
   AfX25 = AF_X25,
+};
+
+enum LinkAttrType {
+  IflaCost = IFLA_COST,
+  IflaLinkinfo = IFLA_LINKINFO,
+  IflaMap = IFLA_MAP,
+  IflaMaster = IFLA_MASTER,
+  IflaPriority = IFLA_PRIORITY,
+  IflaProtinfo = IFLA_PROTINFO,
+  IflaTxqlen = IFLA_TXQLEN,
+  IflaWeight = IFLA_WEIGHT,
+  IflaWireless = IFLA_WIRELESS,
 };

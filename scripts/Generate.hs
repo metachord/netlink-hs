@@ -18,13 +18,14 @@ includes :: IO String
 includes = includeBlock [ "linux/if.h"
                         , "linux/if_tun.h"
                         , "linux/if_arp.h"
+                        , "linux/if_link.h"
                         , "linux/netlink.h"
                         , "linux/rtnetlink.h"
                         , "sys/socket.h"
                         ]
 
 generate :: IO String
-generate = ('\n' :) . concat <$> sequence
+generate = concat <$> sequence
        [ defsToEnum "LinkFlags" ["linux/if.h",
                                  "linux/if_tun.h"] ("IFF_" `isPrefixOf`)
        , defsToEnum "LinkType" ["linux/if_arp.h"] ("ARPHRD_" `isPrefixOf`)
@@ -36,11 +37,12 @@ generate = ('\n' :) . concat <$> sequence
                 not ("RTM_F_" `isPrefixOf` d) &&
                 ("NLMSG_" `isPrefixOf` d || "RTM_" `isPrefixOf` d))
        , defsToEnum "AddressFamily" ["sys/socket.h"] ("AF_" `isPrefixOf`)
+       , defsToEnum "LinkAttrType" ["linux/if_link.h"] ("IFLA_" `isPrefixOf`)
        ]
 
 defsToEnum :: String -> [String] -> (String -> Bool) -> IO String
 defsToEnum name patterns cond = do
-    makeEnum name <$> filteredDefs patterns cond
+    ('\n' :) . makeEnum name <$> filteredDefs patterns cond
 
 makeEnum :: String -> [String] -> String
 makeEnum name defs = unlines $ header : body ++ ["};"]
