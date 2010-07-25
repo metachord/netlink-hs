@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
 module System.Linux.Netlink.C
     (
@@ -14,14 +15,25 @@ module System.Linux.Netlink.C
     , LinkType(..)
     , LinkFlags(..)
     , AddressFamily(..)
+
+    , cFromEnum
+    , cToEnum
     ) where
 
-import C2HS
 import Control.Applicative ((<$>), (<*))
 import Control.Monad (when)
+import Data.Bits (Bits, (.&.), (.|.), clearBit, setBit, shiftL)
 import Data.ByteString (ByteString)
 import Data.ByteString.Internal (createAndTrim, toForeignPtr)
 import Data.Unique (hashUnique, newUnique)
+import Data.Word (Word32)
+import Foreign.C.Error (throwErrnoIf, throwErrnoIfMinus1, throwErrnoIfMinus1_)
+import Foreign.C.Types (CInt, CUInt, CUShort)
+import Foreign.ForeignPtr (touchForeignPtr, unsafeForeignPtrToPtr)
+import Foreign.Marshal.Array (withArrayLen)
+import Foreign.Marshal.Utils (with)
+import Foreign.Ptr (Ptr, castPtr, plusPtr)
+import Foreign.Storable (Storable(..))
 import System.Posix.Process (getProcessID)
 
 #include <string.h>
@@ -66,7 +78,7 @@ recvmsg (NS fd) len =
     createAndTrim len $ \ptr ->
     with (IoVec (castPtr ptr, len)) $ \vec ->
     with (MsgHdr (castPtr vec, 1)) $ \msg ->
-    fmap cIntConv . throwErrnoIf (<= 0) "recvmsg" $ do
+    fmap fromIntegral . throwErrnoIf (<= 0) "recvmsg" $ do
         {#call recvmsg as _recvmsg #} fd (castPtr msg) (0 :: CInt)
 
 {#enum define PF { NETLINK_ROUTE as Route } #}
@@ -83,8 +95,14 @@ class Enum a => Flags a where
     setFlags :: Num b => [a] -> b
     setFlags = sum . map (fromIntegral . fromEnum)
 
-    flagSet :: Bits b => a -> b -> Bool
-    flagSet flag n = n .&. fromIntegral (fromEnum flag) /= 0
+    isFlagSet :: Bits b => a -> b -> Bool
+    isFlagSet flag n = n .&. fromIntegral (fromEnum flag) /= 0
+
+    setFlag :: Bits b => a -> b -> b
+    setFlag f v = setBit v (fromEnum f)
+
+    clearFlag :: Bits b => a -> b -> b
+    clearFlag f v = clearBit v (fromEnum f)
 
 instance Flags MessageFlags
 instance Flags LinkFlags
@@ -97,11 +115,11 @@ instance Storable IoVec where
     peek p = do
         addr <- {#get iovec.iov_base #} p
         len  <- {#get iovec.iov_len #}  p
-        return $ IoVec (addr, (cIntConv len))
+        return $ IoVec (addr, (fromIntegral len))
     poke p (IoVec (addr, len)) = do
         zero p
         {#set iovec.iov_base #} p addr
-        {#set iovec.iov_len  #} p (cIntConv len)
+        {#set iovec.iov_len  #} p (fromIntegral len)
 
 data MsgHdr = MsgHdr (Ptr (), Int)
 
@@ -111,11 +129,11 @@ instance Storable MsgHdr where
     peek p = do
         iov     <- {#get msghdr.msg_iov     #} p
         iovlen  <- {#get msghdr.msg_iovlen  #} p
-        return $ MsgHdr (iov, cIntConv iovlen)
+        return $ MsgHdr (iov, fromIntegral iovlen)
     poke p (MsgHdr (iov, iovlen)) = do
         zero p
         {#set msghdr.msg_iov     #} p iov
-        {#set msghdr.msg_iovlen  #} p (cIntConv iovlen)
+        {#set msghdr.msg_iovlen  #} p (fromIntegral iovlen)
 
 data SockAddrNetlink = SockAddrNetlink Word32
 
@@ -125,11 +143,11 @@ instance Storable SockAddrNetlink where
     peek p = do
         family <- cToEnum <$> {#get sockaddr_nl.nl_family #} p
         when (family /= AfNetlink) $ fail "Bad address family"
-        SockAddrNetlink . cIntConv <$> {#get sockaddr_nl.nl_pid #} p
+        SockAddrNetlink . fromIntegral <$> {#get sockaddr_nl.nl_pid #} p
     poke p (SockAddrNetlink pid) = do
         zero p
         {#set sockaddr_nl.nl_family #} p (cFromEnum AfNetlink)
-        {#set sockaddr_nl.nl_pid    #} p (cIntConv pid)
+        {#set sockaddr_nl.nl_pid    #} p (fromIntegral pid)
 
 useManyAsPtrLen :: [ByteString] -> ([(Ptr (), Int)] -> IO a) -> IO a
 useManyAsPtrLen bs act =
@@ -141,7 +159,16 @@ useManyAsPtrLen bs act =
     in act (map makePtrLen foreigns) <* mapM_ touchByteStringPtr foreigns
 
 sizeOfPtr :: (Storable a, Integral b) => Ptr a -> b
-sizeOfPtr = cIntConv . sizeOf . (undefined :: Ptr a -> a)
+sizeOfPtr = fromIntegral . sizeOf . (undefined :: Ptr a -> a)
 
 zero :: Storable a => Ptr a -> IO ()
 zero p = void $ {#call memset #} (castPtr p) 0 (sizeOfPtr p)
+
+void :: Monad m => m a -> m ()
+void act = act >> return ()
+
+cFromEnum :: (Enum e, Integral i) => e -> i
+cFromEnum = fromIntegral . fromEnum
+
+cToEnum :: (Integral i, Enum e) => i -> e
+cToEnum = toEnum . fromIntegral

@@ -12,7 +12,6 @@ Category:            System
 Build-type:          Simple
 Cabal-version:       >=1.2
 
-
 Library
   Exposed-modules:   System.Linux.Netlink
                      System.Linux.Netlink.C
@@ -22,7 +21,6 @@ Library
                      cereal >=0.3 && <0.4,
                      haskell98 >=1,
                      unix >=2.4 && <2.5
-  Other-modules:     C2HS
   Build-tools:       c2hs > 0.16
   Ghc-options:       -Wall -fwarn-tabs
   Ghc-prof-options:  -auto-all
