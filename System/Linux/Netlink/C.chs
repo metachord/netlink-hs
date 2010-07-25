@@ -22,7 +22,7 @@ module System.Linux.Netlink.C
 
 import Control.Applicative ((<$>), (<*))
 import Control.Monad (when)
-import Data.Bits (Bits, (.&.), (.|.), clearBit, setBit, shiftL)
+import Data.Bits (Bits, (.&.), (.|.), complement, shiftL)
 import Data.ByteString (ByteString)
 import Data.ByteString.Internal (createAndTrim, toForeignPtr)
 import Data.Unique (hashUnique, newUnique)
@@ -98,11 +98,11 @@ class Enum a => Flags a where
     isFlagSet :: Bits b => a -> b -> Bool
     isFlagSet flag n = n .&. fromIntegral (fromEnum flag) /= 0
 
-    setFlag :: Bits b => a -> b -> b
-    setFlag f v = v .|. (fromEnum f)
+    setFlag :: (Integral b, Bits b) => a -> b -> b
+    setFlag f v = v .|. (cFromEnum f)
 
-    clearFlag :: Bits b => a -> b -> b
-    clearFlag f v = v .&. complement (fromEnum f)
+    clearFlag :: (Integral b, Bits b) => a -> b -> b
+    clearFlag f v = v .&. complement (cFromEnum f)
 
 instance Flags MessageFlags
 instance Flags LinkFlags
