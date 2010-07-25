@@ -123,7 +123,6 @@ enum MessageType {
   NlmsgError = NLMSG_ERROR,
   NlmsgNoop = NLMSG_NOOP,
   NlmsgOverrun = NLMSG_OVERRUN,
-  RtmBase = RTM_BASE,
   RtmDelaction = RTM_DELACTION,
   RtmDeladdr = RTM_DELADDR,
   RtmDeladdrlabel = RTM_DELADDRLABEL,

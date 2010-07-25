@@ -31,7 +31,8 @@ generate = ('\n' :) . concat <$> sequence
        , defsToEnum "MessageFlags" ["linux/netlink.h"] ("NLM_F_" `isPrefixOf`)
        , defsToEnum "MessageType" ["linux/netlink.h",
                                    "linux/rtnetlink.h"]
-         (\d -> d `notElem` ["NLMSG_ALIGNTO", "NLMSG_MIN_TYPE", "RTM_MAX"] &&
+         (\d -> d `notElem` ["NLMSG_ALIGNTO", "NLMSG_MIN_TYPE",
+                             "RTM_BASE", "RTM_MAX"] &&
                 not ("RTM_F_" `isPrefixOf` d) &&
                 ("NLMSG_" `isPrefixOf` d || "RTM_" `isPrefixOf` d))
        , defsToEnum "AddressFamily" ["sys/socket.h"] ("AF_" `isPrefixOf`)
