@@ -28,10 +28,6 @@ import System.Posix.Process (getProcessID)
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#c
-typedef int64_t aligned_u64;
-#endc
-
 #include "enums.h"
 
 #c
