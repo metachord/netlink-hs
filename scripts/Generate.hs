@@ -39,6 +39,8 @@ generate = concat <$> sequence
        , defsToEnum "AddressFamily" ["sys/socket.h"] ("AF_" `isPrefixOf`)
        , defsToEnum "LinkAttrType" ["linux/if_link.h"] ("IFLA_" `isPrefixOf`)
        , defsToEnum "AddrFlags" ["linux/if_addr.h"] ("IFA_F_" `isPrefixOf`)
+       , defsToEnum "RouteProto" ["linux/rtnetlink.h"] ("RTPROT_" `isPrefixOf`)
+       , defsToEnum "RouteFlags" ["linux/rtnetlink.h"] ("RTM_F_" `isPrefixOf`)
        ]
 
 defsToEnum :: String -> [String] -> (String -> Bool) -> IO String

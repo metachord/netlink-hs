@@ -91,7 +91,8 @@ recvmsg (NS fd) len =
 {#enum LinkFlags {} deriving (Eq, Show) #}
 {#enum LinkAttrType {} deriving (Eq, Show) #}
 {#enum AddrFlags {} deriving (Eq, Show) #}
-{#enum rt_scope_t as Scope {} deriving (Eq, Show) #}
+{#enum rt_scope_t as Scope { underscoreToCase
+                           , upcaseFirstLetter} deriving (Eq, Show) #}
 {#enum define AddrAttrType { IFA_UNSPEC as IfaUnspec
                            , IFA_ADDRESS as IfaAddress
                            , IFA_LOCAL as IfaLocal
@@ -101,6 +102,24 @@ recvmsg (NS fd) len =
                            , IFA_CACHEINFO as IfaCacheinfo
                            , IFA_MULTICAST as IfaMulticast
                            } deriving (Eq, Show) #}
+{#enum rt_class_t as RouteTableId { underscoreToCase
+                                  , upcaseFirstLetter } deriving (Eq, Show) #}
+{#enum RouteProto {} deriving (Eq, Show) #}
+{#enum define RouteType { RTN_UNSPEC as RtnUnspec
+                        , RTN_UNICAST as RtnUnicast
+                        , RTN_LOCAL as RtnLocal
+                        , RTN_BROADCAST as RtnBroadcast
+                        , RTN_ANYCAST as RtnAnycast
+                        , RTN_MULTICAST as RtnMulticast
+                        , RTN_BLACKHOLE as RtnBlackhole
+                        , RTN_UNREACHABLE as RtnUnreachable
+                        , RTN_PROHIBIT as RtnProhibit
+                        , RTN_THROW as RtnThrow
+                        , RTN_NAT as RtnNat
+                        , RTN_XRESOLVE as RtnXresolve } deriving (Eq, Show) #}
+{#enum RouteFlags {} deriving (Eq, Show) #}
+{#enum rtattr_type_t as RouteAttrType { underscoreToCase
+                                      , upcaseFirstLetter } deriving (Eq, Show) #}
 
 -- Enumerations of flags used in netlink requests/responses.
 class Enum a => Flags a where

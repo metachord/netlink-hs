@@ -234,3 +234,27 @@ enum AddrFlags {
   IfaFTemporary = IFA_F_TEMPORARY,
   IfaFTentative = IFA_F_TENTATIVE,
 };
+
+enum RouteProto {
+  RtprotBird = RTPROT_BIRD,
+  RtprotBoot = RTPROT_BOOT,
+  RtprotDhcp = RTPROT_DHCP,
+  RtprotDnrouted = RTPROT_DNROUTED,
+  RtprotGated = RTPROT_GATED,
+  RtprotKernel = RTPROT_KERNEL,
+  RtprotMrt = RTPROT_MRT,
+  RtprotNtk = RTPROT_NTK,
+  RtprotRa = RTPROT_RA,
+  RtprotRedirect = RTPROT_REDIRECT,
+  RtprotStatic = RTPROT_STATIC,
+  RtprotUnspec = RTPROT_UNSPEC,
+  RtprotXorp = RTPROT_XORP,
+  RtprotZebra = RTPROT_ZEBRA,
+};
+
+enum RouteFlags {
+  RtmFCloned = RTM_F_CLONED,
+  RtmFEqualize = RTM_F_EQUALIZE,
+  RtmFNotify = RTM_F_NOTIFY,
+  RtmFPrefix = RTM_F_PREFIX,
+};
