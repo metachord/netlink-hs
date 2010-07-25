@@ -29,7 +29,16 @@ data Message = ErrorMsg
       interfaceType  :: LinkType
     , interfaceIndex :: Word32
     , interfaceFlags :: Word32
-    } deriving (Eq)
+    }
+             | AddrMsg
+    {
+      addrFamily         :: AddressFamily
+    , addrMaskLength     :: Word8
+    , addrFlags          :: Word8
+    , addrScope          :: Word8
+    , addrInterfaceIndex :: Word32
+    }
+             deriving (Eq)
 
 data Attributes = Attributes deriving (Eq, Show)
 

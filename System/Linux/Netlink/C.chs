@@ -84,11 +84,23 @@ recvmsg (NS fd) len =
 {#enum define PF { NETLINK_ROUTE as Route } #}
 {#enum define ST { SOCK_RAW as Raw } #}
 
+{#enum AddressFamily {} deriving (Eq, Show) #}
 {#enum MessageType {} deriving (Eq, Show) #}
 {#enum MessageFlags {} deriving (Eq, Show) #}
 {#enum LinkType {} deriving (Eq, Show) #}
 {#enum LinkFlags {} deriving (Eq, Show) #}
-{#enum AddressFamily {} deriving (Eq, Show) #}
+{#enum LinkAttrType {} deriving (Eq, Show) #}
+{#enum AddrFlags {} deriving (Eq, Show) #}
+{#enum rt_scope_t as Scope {} deriving (Eq, Show) #}
+{#enum define AddrAttrType { IFA_UNSPEC as IfaUnspec
+                           , IFA_ADDRESS as IfaAddress
+                           , IFA_LOCAL as IfaLocal
+                           , IFA_LABEL as IfaLabel
+                           , IFA_BROADCAST as IfaBroadcast
+                           , IFA_ANYCAST as IfaAnycast
+                           , IFA_CACHEINFO as IfaCacheinfo
+                           , IFA_MULTICAST as IfaMulticast
+                           } deriving (Eq, Show) #}
 
 -- Enumerations of flags used in netlink requests/responses.
 class Enum a => Flags a where
