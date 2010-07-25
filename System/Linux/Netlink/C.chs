@@ -99,10 +99,10 @@ class Enum a => Flags a where
     isFlagSet flag n = n .&. fromIntegral (fromEnum flag) /= 0
 
     setFlag :: Bits b => a -> b -> b
-    setFlag f v = setBit v (fromEnum f)
+    setFlag f v = v .|. (fromEnum f)
 
     clearFlag :: Bits b => a -> b -> b
-    clearFlag f v = clearBit v (fromEnum f)
+    clearFlag f v = v .&. complement (fromEnum f)
 
 instance Flags MessageFlags
 instance Flags LinkFlags
