@@ -211,18 +211,6 @@ enum AddressFamily {
   AfX25 = AF_X25,
 };
 
-enum LinkAttrType {
-  IflaCost = IFLA_COST,
-  IflaLinkinfo = IFLA_LINKINFO,
-  IflaMap = IFLA_MAP,
-  IflaMaster = IFLA_MASTER,
-  IflaPriority = IFLA_PRIORITY,
-  IflaProtinfo = IFLA_PROTINFO,
-  IflaTxqlen = IFLA_TXQLEN,
-  IflaWeight = IFLA_WEIGHT,
-  IflaWireless = IFLA_WIRELESS,
-};
-
 enum AddrFlags {
   IfaFDadfailed = IFA_F_DADFAILED,
   IfaFDeprecated = IFA_F_DEPRECATED,

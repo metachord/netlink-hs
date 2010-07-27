@@ -1,27 +1,40 @@
-module System.Linux.Netlink.Protocol where
+module System.Linux.Netlink.Protocol 
+    (
+      Header(..)
+    , Message(..)
+    , Attributes
+    , Packet
+    
+    , getPacket
+    , putPacket
+    ) where
 
 import Prelude hiding (length)
 
 import Control.Applicative ((<$>))
+import Control.Monad (when)
 import Data.ByteString (ByteString, length)
+import Data.Map (Map, fromList, toList)
 import Data.Serialize.Get
 import Data.Serialize.Put
 import Data.Word (Word8, Word16, Word32)
 import Foreign.C.Error (Errno(..))
+import Foreign.C.Types (CInt)
+import System.IO.Unsafe (unsafePerformIO)
 
 import System.Linux.Netlink.C
 
 data Header = Header
     {
       messageType   :: MessageType
-    , messageFlags  :: MessageFlags
+    , messageFlags  :: Word16
     , messageSeqNum :: Word32
     , messagePID    :: Word32
     } deriving (Eq, Show)
 
 data Message = ErrorMsg
     {
-      errorCode   :: Errno
+      errorCode   :: CInt
     , errorHeader :: Header
     }
              | LinkMsg
@@ -37,18 +50,17 @@ data Message = ErrorMsg
     , addrFlags          :: Word8
     , addrScope          :: Word8
     , addrInterfaceIndex :: Word32
-    }
-             deriving (Eq)
+    } deriving (Eq, Show)
 
-data Attributes = Attributes deriving (Eq, Show)
+type Attributes = Map Int ByteString
 
 type Packet = (Header, Message, Attributes)
 
 --
 -- Packet decoding
 --
-getPacket :: Get Packet
-getPacket = do
+getPacket :: ByteString -> Either String Packet
+getPacket bytes = flip runGet bytes $ do
     header <- getHeader
     msg    <- getMessage (messageType header)
     attrs  <- getAttributes
@@ -75,14 +87,14 @@ getMessage a          = error $ "Can't decode message " ++ show a
 
 getMessageError :: Get Message
 getMessageError = do
-    code <- Errno . abs . fromIntegral <$> g32
+    code <- abs . fromIntegral <$> g32
     hdr  <- getHeader
     return $ ErrorMsg code hdr
 
 getMessageLink :: Get Message
 getMessageLink = do
     skip 2
-    ty    <- cToEnum <$> getWord16be
+    ty    <- cToEnum <$> g16
     idx   <- g32
     flags <- g32
     skip 4
@@ -98,7 +110,19 @@ getMessageAddr = do
     return $ AddrMsg fam maskLen flags scope idx
 
 getAttributes :: Get Attributes
-getAttributes = return Attributes
+getAttributes = fromList <$> run 0
+  where
+    run preSkip = isEmpty >>= \e -> if e then return [] else do
+        when (preSkip > 0) $ skip preSkip
+        -- RFC violation: RFC says type, then length, with length of
+        -- value only. Reality says length of everything including
+        -- length bytes, then type, then value.
+        len <- fromIntegral <$> g16
+        ty <- fromIntegral <$> g16
+        val <- getByteString (len - 4)
+        -- Another spec violation: attributes are 32-bit aligned. The
+        -- spec says nothing about that.
+        ((ty, val) :) <$> run (4 - (len `mod` 4))
 
 --
 -- Packet serialization
@@ -134,7 +158,12 @@ putMessage (AddrMsg fam maskLen flags scope idx) = do
 putMessage _ = error "Can't transmit this message to the kernel."
 
 putAttributes :: Attributes -> Put
-putAttributes _ = p8 0
+putAttributes = mapM_ putAttr . toList
+  where
+    putAttr (ty, value) = do
+        p16 (fromIntegral ty)
+        p16 (fromIntegral . length $ value)
+        putByteString value
 
 --
 -- Helpers

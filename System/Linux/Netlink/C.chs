@@ -89,7 +89,28 @@ recvmsg (NS fd) len =
 {#enum MessageFlags {} deriving (Eq, Show) #}
 {#enum LinkType {} deriving (Eq, Show) #}
 {#enum LinkFlags {} deriving (Eq, Show) #}
-{#enum LinkAttrType {} deriving (Eq, Show) #}
+{#enum define LinkAttrType { IFLA_UNSPEC as IflaUnspec
+                           , IFLA_ADDRESS as IflaAddress
+                           , IFLA_BROADCAST as IflaBroadcast
+                           , IFLA_IFNAME as IflaIfname
+                           , IFLA_MTU as IflaMtu
+                           , IFLA_LINK as IflaLink
+                           , IFLA_QDISC as IflaQdisc
+                           , IFLA_STATS as IflaStats
+                           , IFLA_COST as IflaCost
+                           , IFLA_PRIORITY as IflaPriority
+                           , IFLA_MASTER as IflaMaster
+                           , IFLA_WIRELESS as IflaWireless
+                           , IFLA_PROTINFO as IflaProtinfo
+                           , IFLA_TXQLEN as IflaTxqlen
+                           , IFLA_MAP as IflaMap
+                           , IFLA_WEIGHT as IflaWeight
+                           , IFLA_OPERSTATE as IflaOperstate
+                           , IFLA_LINKMODE as IflaLinkmode
+                           , IFLA_LINKINFO as IflaLinkinfo
+                           , IFLA_NET_NS_PID as IflaNetNsPid
+                           , IFLA_IFALIAS as IflaIfalias
+                           } deriving (Eq, Show) #}
 {#enum AddrFlags {} deriving (Eq, Show) #}
 {#enum rt_scope_t as Scope { underscoreToCase
                            , upcaseFirstLetter} deriving (Eq, Show) #}

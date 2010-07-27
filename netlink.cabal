@@ -19,6 +19,7 @@ Library
   Build-depends:     base >=4 && <5,
                      bytestring >=0.9 && <1.0,
                      cereal >=0.3 && <0.4,
+                     containers >=0.3 && <0.4,
                      haskell98 >=1,
                      unix >=2.4 && <2.5
   Build-tools:       c2hs > 0.16

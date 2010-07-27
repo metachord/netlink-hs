@@ -2,30 +2,39 @@ module Main where
 
 import Prelude hiding (length)
 
+import Control.Applicative ((<$>))
 import Control.Exception (throwIO)
-import Data.ByteString (length)
+import Data.ByteString (ByteString, length, unpack)
+import Data.Map (empty)
 import System.Linux.Netlink.C
 import System.Linux.Netlink.Protocol
-
-import Data.Serialize (encode, decode)
+import Data.Char (ord)
 
 main = do
     sock <- makeSocket
-    
-    sendmsg sock [encode $ GetInterface ARP_NONE 1 0]
-    res <- recvmsg sock 8192
-    case decode res of
-        Left err -> print err
-        Right msg -> print (msg :: Message)
 
-    sendmsg sock [encode $ GetInterface ARP_NONE 2 0]
-    res <- recvmsg sock 8192
-    case decode res of
-        Left err -> print err
-        Right msg -> print (msg :: Message)
+    let flags = setFlags [NlmFRequest]
 
-    sendmsg sock [encode $ GetInterface ARP_NONE 3 0]
+    sendmsg sock $ putPacket $ (Header RtmGetlink flags 42 0,
+                                LinkMsg ArphrdNone 1 0,
+                                empty)
     res <- recvmsg sock 8192
-    case decode res of
-        Left err -> print err
-        Right msg -> print (msg :: Message)
+    dumpNumeric res
+    print (getPacket res)
+
+    sendmsg sock $ putPacket $ (Header RtmGetlink flags 43 0,
+                                LinkMsg ArphrdNone 2 0,
+                                empty)
+    res <- recvmsg sock 8192
+    print res
+    print (getPacket res)
+
+    sendmsg sock $ putPacket $ (Header RtmGetlink flags 44 0,
+                                LinkMsg ArphrdNone 3 0,
+                                empty)
+    res <- recvmsg sock 8192
+    print res
+    print (getPacket res)
+
+dumpNumeric :: ByteString -> IO ()
+dumpNumeric b = print $ unpack b
