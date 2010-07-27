@@ -13,6 +13,7 @@ import Prelude hiding (length)
 
 import Control.Applicative ((<$>))
 import Control.Monad (when)
+import Control.Monad.Loops (whileM)
 import Data.ByteString (ByteString, length)
 import Data.Map (Map, fromList, toList)
 import Data.Serialize.Get
@@ -32,10 +33,11 @@ data Header = Header
     , messagePID    :: Word32
     } deriving (Eq, Show)
 
-data Message = ErrorMsg
+data Message = DoneMsg
+             | ErrorMsg
     {
-      errorCode   :: CInt
-    , errorHeader :: Header
+      errorCode    :: CInt
+    , errorPacket  :: Packet
     }
              | LinkMsg
     {
@@ -59,16 +61,23 @@ type Packet = (Header, Message, Attributes)
 --
 -- Packet decoding
 --
-getPacket :: ByteString -> Either String Packet
+getPacket :: ByteString -> Either String [Packet]
 getPacket bytes = flip runGet bytes $ do
-    header <- getHeader
-    msg    <- getMessage (messageType header)
-    attrs  <- getAttributes
-    return (header, msg, attrs)
+    pkts <- whileM (not <$> isEmpty) getPacketInternal
+    isEmpty >>= \e -> when (not e) $ fail "Incomplete message parse"
+    return pkts
+
+getPacketInternal :: Get Packet
+getPacketInternal = do
+    len <- fromIntegral <$> g32
+    isolate (len - 4) $ do
+        header <- getHeader
+        msg    <- getMessage (messageType header)
+        attrs <- whileM (not <$> isEmpty) getSingleAttribute
+        return (header, msg, fromList attrs)
 
 getHeader :: Get Header
 getHeader = do
-    skip 4
     ty     <- cToEnum <$> g16
     flags  <- cToEnum <$> g16
     seqnum <- g32
@@ -76,6 +85,7 @@ getHeader = do
     return $ Header ty flags seqnum pid
 
 getMessage :: MessageType -> Get Message
+getMessage NlmsgDone  = skip 4 >> return DoneMsg
 getMessage NlmsgError = getMessageError
 getMessage RtmNewlink = getMessageLink
 getMessage RtmDellink = getMessageLink
@@ -88,8 +98,8 @@ getMessage a          = error $ "Can't decode message " ++ show a
 getMessageError :: Get Message
 getMessageError = do
     code <- abs . fromIntegral <$> g32
-    hdr  <- getHeader
-    return $ ErrorMsg code hdr
+    pkt  <- getPacketInternal
+    return $ ErrorMsg code pkt
 
 getMessageLink :: Get Message
 getMessageLink = do
@@ -124,6 +134,14 @@ getAttributes = fromList <$> run 0
         -- spec says nothing about that.
         ((ty, val) :) <$> run (4 - (len `mod` 4))
 
+getSingleAttribute :: Get (Int, ByteString)
+getSingleAttribute = do
+    len <- fromIntegral <$> g16
+    ty <- fromIntegral <$> g16
+    val <- getByteString (len - 4)
+    isEmpty >>= \e -> when (not e && len `mod` 4 /= 0) $ skip (4 - (len `mod` 4))
+    return (ty, val)
+
 --
 -- Packet serialization
 --
@@ -143,6 +161,7 @@ putHeader len (Header ty flags seqnum pid) = do
     p32 pid
 
 putMessage :: Message -> Put
+putMessage DoneMsg = p32 0
 putMessage (LinkMsg ty idx flags) = do
     p8 (cFromEnum AfUnspec) >> p8 0
     p16 (cFromEnum ty)
