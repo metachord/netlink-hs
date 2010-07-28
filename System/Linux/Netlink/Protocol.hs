@@ -3,7 +3,7 @@ module System.Linux.Netlink.Protocol
       Header(..)
     , Message(..)
     , Attributes
-    , Packet
+    , Packet(..)
     
     , getPacket
     , putPacket
@@ -56,7 +56,12 @@ data Message = DoneMsg
 
 type Attributes = Map Int ByteString
 
-type Packet = (Header, Message, Attributes)
+data Packet = Packet
+    {
+      packetHeader     :: Header 
+    , packetMessage    :: Message
+    , packetAttributes :: Attributes
+    } deriving (Eq, Show)
 
 --
 -- Packet decoding
@@ -74,7 +79,7 @@ getPacketInternal = do
         header <- getHeader
         msg    <- getMessage (messageType header)
         attrs <- whileM (not <$> isEmpty) getSingleAttribute
-        return (header, msg, fromList attrs)
+        return $ Packet header msg (fromList attrs)
 
 getHeader :: Get Header
 getHeader = do
@@ -146,7 +151,7 @@ getSingleAttribute = do
 -- Packet serialization
 --
 putPacket :: Packet -> [ByteString]
-putPacket (header, message, attributes) =
+putPacket (Packet header message attributes) =
     let attrs  = runPut $ putAttributes attributes
         msg    = runPut $ putMessage message
         hdr = runPut $ putHeader (length msg + length attrs + 16) header
