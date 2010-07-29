@@ -8,21 +8,13 @@ module System.Linux.Netlink.C
     , sendmsg
     , recvmsg
 
-    , Flags(..)
-      
-    , MessageType(..)
-    , MessageFlags(..)
-    , LinkType(..)
-    , LinkFlags(..)
-    , AddressFamily(..)
-
     , cFromEnum
     , cToEnum
     ) where
 
 import Control.Applicative ((<$>), (<*))
 import Control.Monad (when)
-import Data.Bits (Bits, (.&.), (.|.), complement, shiftL)
+import Data.Bits (Bits, (.|.), shiftL)
 import Data.ByteString (ByteString)
 import Data.ByteString.Internal (createAndTrim, toForeignPtr)
 import Data.Unique (hashUnique, newUnique)
@@ -36,11 +28,12 @@ import Foreign.Ptr (Ptr, castPtr, plusPtr)
 import Foreign.Storable (Storable(..))
 import System.Posix.Process (getProcessID)
 
+import System.Linux.Netlink.Constants (eAF_NETLINK)
+
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
-#include "enums.h"
+#include <linux/netlink.h>
 
 #c
 typedef struct msghdr msdhdr;
@@ -54,7 +47,7 @@ makeSocket :: IO NetlinkSocket
 makeSocket = do
     fd <- throwErrnoIfMinus1 "makeSocket.socket" $
           ({#call socket #}
-           (cFromEnum AfNetlink)
+           eAF_NETLINK
            (cFromEnum Raw)
            (cFromEnum Route))
     unique <- fromIntegral . hashUnique <$> newUnique
@@ -83,83 +76,6 @@ recvmsg (NS fd) len =
 
 {#enum define PF { NETLINK_ROUTE as Route } #}
 {#enum define ST { SOCK_RAW as Raw } #}
-
-{#enum AddressFamily {} deriving (Eq, Show) #}
-{#enum MessageType {} deriving (Eq, Show) #}
-{#enum MessageFlags {} deriving (Eq, Show) #}
-{#enum LinkType {} deriving (Eq, Show) #}
-{#enum LinkFlags {} deriving (Eq, Show) #}
-{#enum define LinkAttrType { IFLA_UNSPEC as IflaUnspec
-                           , IFLA_ADDRESS as IflaAddress
-                           , IFLA_BROADCAST as IflaBroadcast
-                           , IFLA_IFNAME as IflaIfname
-                           , IFLA_MTU as IflaMtu
-                           , IFLA_LINK as IflaLink
-                           , IFLA_QDISC as IflaQdisc
-                           , IFLA_STATS as IflaStats
-                           , IFLA_COST as IflaCost
-                           , IFLA_PRIORITY as IflaPriority
-                           , IFLA_MASTER as IflaMaster
-                           , IFLA_WIRELESS as IflaWireless
-                           , IFLA_PROTINFO as IflaProtinfo
-                           , IFLA_TXQLEN as IflaTxqlen
-                           , IFLA_MAP as IflaMap
-                           , IFLA_WEIGHT as IflaWeight
-                           , IFLA_OPERSTATE as IflaOperstate
-                           , IFLA_LINKMODE as IflaLinkmode
-                           , IFLA_LINKINFO as IflaLinkinfo
-                           , IFLA_NET_NS_PID as IflaNetNsPid
-                           , IFLA_IFALIAS as IflaIfalias
-                           } deriving (Eq, Show) #}
-{#enum AddrFlags {} deriving (Eq, Show) #}
-{#enum rt_scope_t as Scope { underscoreToCase
-                           , upcaseFirstLetter} deriving (Eq, Show) #}
-{#enum define AddrAttrType { IFA_UNSPEC as IfaUnspec
-                           , IFA_ADDRESS as IfaAddress
-                           , IFA_LOCAL as IfaLocal
-                           , IFA_LABEL as IfaLabel
-                           , IFA_BROADCAST as IfaBroadcast
-                           , IFA_ANYCAST as IfaAnycast
-                           , IFA_CACHEINFO as IfaCacheinfo
-                           , IFA_MULTICAST as IfaMulticast
-                           } deriving (Eq, Show) #}
-{#enum rt_class_t as RouteTableId { underscoreToCase
-                                  , upcaseFirstLetter } deriving (Eq, Show) #}
-{#enum RouteProto {} deriving (Eq, Show) #}
-{#enum define RouteType { RTN_UNSPEC as RtnUnspec
-                        , RTN_UNICAST as RtnUnicast
-                        , RTN_LOCAL as RtnLocal
-                        , RTN_BROADCAST as RtnBroadcast
-                        , RTN_ANYCAST as RtnAnycast
-                        , RTN_MULTICAST as RtnMulticast
-                        , RTN_BLACKHOLE as RtnBlackhole
-                        , RTN_UNREACHABLE as RtnUnreachable
-                        , RTN_PROHIBIT as RtnProhibit
-                        , RTN_THROW as RtnThrow
-                        , RTN_NAT as RtnNat
-                        , RTN_XRESOLVE as RtnXresolve } deriving (Eq, Show) #}
-{#enum RouteFlags {} deriving (Eq, Show) #}
-{#enum rtattr_type_t as RouteAttrType { underscoreToCase
-                                      , upcaseFirstLetter } deriving (Eq, Show) #}
-
--- Enumerations of flags used in netlink requests/responses.
-class Enum a => Flags a where
-    setFlags :: Num b => [a] -> b
-    setFlags = sum . map (fromIntegral . fromEnum)
-
-    isFlagSet :: Bits b => a -> b -> Bool
-    isFlagSet flag n = n .&. fromIntegral (fromEnum flag) /= 0
-
-    setFlag :: (Integral b, Bits b) => a -> b -> b
-    setFlag f v = v .|. (cFromEnum f)
-
-    clearFlag :: (Integral b, Bits b) => a -> b -> b
-    clearFlag f v = v .&. complement (cFromEnum f)
-
-instance Flags MessageFlags
-instance Flags LinkFlags
-instance Flags AddrFlags
-instance Flags RouteFlags
 
 data IoVec = IoVec (Ptr (), Int)
 
@@ -195,12 +111,12 @@ instance Storable SockAddrNetlink where
     sizeOf    _ = {#sizeof sockaddr_nl #}
     alignment _ = 4
     peek p = do
-        family <- cToEnum <$> {#get sockaddr_nl.nl_family #} p
-        when (family /= AfNetlink) $ fail "Bad address family"
+        family <- {#get sockaddr_nl.nl_family #} p
+        when (family /= eAF_NETLINK) $ fail "Bad address family"
         SockAddrNetlink . fromIntegral <$> {#get sockaddr_nl.nl_pid #} p
     poke p (SockAddrNetlink pid) = do
         zero p
-        {#set sockaddr_nl.nl_family #} p (cFromEnum AfNetlink)
+        {#set sockaddr_nl.nl_family #} p eAF_NETLINK
         {#set sockaddr_nl.nl_pid    #} p (fromIntegral pid)
 
 useManyAsPtrLen :: [ByteString] -> ([(Ptr (), Int)] -> IO a) -> IO a

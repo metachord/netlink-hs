@@ -19,11 +19,9 @@ import Data.Map (Map, fromList, toList)
 import Data.Serialize.Get
 import Data.Serialize.Put
 import Data.Word (Word8, Word16, Word32)
-import Foreign.C.Error (Errno(..))
 import Foreign.C.Types (CInt)
-import System.IO.Unsafe (unsafePerformIO)
 
-import System.Linux.Netlink.C
+import System.Linux.Netlink.Constants
 
 data Header = Header
     {
@@ -83,22 +81,23 @@ getPacketInternal = do
 
 getHeader :: Get Header
 getHeader = do
-    ty     <- cToEnum <$> g16
-    flags  <- cToEnum <$> g16
+    ty     <- fromIntegral <$> g16
+    flags  <- fromIntegral <$> g16
     seqnum <- g32
     pid    <- g32
     return $ Header ty flags seqnum pid
 
 getMessage :: MessageType -> Get Message
-getMessage NlmsgDone  = skip 4 >> return DoneMsg
-getMessage NlmsgError = getMessageError
-getMessage RtmNewlink = getMessageLink
-getMessage RtmDellink = getMessageLink
-getMessage RtmGetlink = getMessageLink
-getMessage RtmNewaddr = getMessageAddr
-getMessage RtmDeladdr = getMessageAddr
-getMessage RtmGetaddr = getMessageAddr
-getMessage a          = error $ "Can't decode message " ++ show a
+getMessage msgtype | msgtype == eNLMSG_DONE  = skip 4 >> return DoneMsg
+                   | msgtype == eNLMSG_ERROR = getMessageError
+                   | msgtype == eRTM_NEWLINK = getMessageLink
+                   | msgtype == eRTM_GETLINK = getMessageLink
+                   | msgtype == eRTM_DELLINK = getMessageLink
+                   | msgtype == eRTM_NEWADDR = getMessageAddr
+                   | msgtype == eRTM_GETADDR = getMessageAddr
+                   | msgtype == eRTM_DELADDR = getMessageAddr
+                   | otherwise               =
+                       error $ "Can't decode message " ++ show msgtype
 
 getMessageError :: Get Message
 getMessageError = do
@@ -109,7 +108,7 @@ getMessageError = do
 getMessageLink :: Get Message
 getMessageLink = do
     skip 2
-    ty    <- cToEnum <$> g16
+    ty    <- fromIntegral <$> g16
     idx   <- g32
     flags <- g32
     skip 4
@@ -117,27 +116,12 @@ getMessageLink = do
 
 getMessageAddr :: Get Message
 getMessageAddr = do
-    fam <- cToEnum <$> g8
+    fam <- fromIntegral <$> g8
     maskLen <- g8
     flags <- g8
-    scope <- cToEnum <$> g8
+    scope <- fromIntegral <$> g8
     idx <- g32
     return $ AddrMsg fam maskLen flags scope idx
-
-getAttributes :: Get Attributes
-getAttributes = fromList <$> run 0
-  where
-    run preSkip = isEmpty >>= \e -> if e then return [] else do
-        when (preSkip > 0) $ skip preSkip
-        -- RFC violation: RFC says type, then length, with length of
-        -- value only. Reality says length of everything including
-        -- length bytes, then type, then value.
-        len <- fromIntegral <$> g16
-        ty <- fromIntegral <$> g16
-        val <- getByteString (len - 4)
-        -- Another spec violation: attributes are 32-bit aligned. The
-        -- spec says nothing about that.
-        ((ty, val) :) <$> run (4 - (len `mod` 4))
 
 getSingleAttribute :: Get (Int, ByteString)
 getSingleAttribute = do
@@ -160,24 +144,24 @@ putPacket (Packet header message attributes) =
 putHeader :: Int -> Header -> Put
 putHeader len (Header ty flags seqnum pid) = do
     p32 (fromIntegral len)
-    p16 (cFromEnum ty)
-    p16 (cFromEnum flags)
+    p16 (fromIntegral ty)
+    p16 (fromIntegral flags)
     p32 seqnum
     p32 pid
 
 putMessage :: Message -> Put
 putMessage DoneMsg = p32 0
 putMessage (LinkMsg ty idx flags) = do
-    p8 (cFromEnum AfUnspec) >> p8 0
-    p16 (cFromEnum ty)
+    p8 eAF_UNSPEC >> p8 0
+    p16 (fromIntegral ty)
     p32 idx
     p32 flags
     p32 0xFFFFFFFF
 putMessage (AddrMsg fam maskLen flags scope idx) = do
-    p8 (cFromEnum fam)
+    p8 (fromIntegral fam)
     p8 maskLen
     p8 flags
-    p8 (cFromEnum scope)
+    p8 (fromIntegral scope)
     p32 idx
 putMessage _ = error "Can't transmit this message to the kernel."
 

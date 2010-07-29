@@ -16,6 +16,7 @@ Library
   Exposed-modules:   System.Linux.Netlink
                      System.Linux.Netlink.Internal
   Other-modules:     System.Linux.Netlink.C
+                     System.Linux.Netlink.Constants
                      System.Linux.Netlink.Protocol
   Build-depends:     base >=4 && <5,
                      bytestring >=0.9 && <1.0,
