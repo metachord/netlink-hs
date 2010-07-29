@@ -4,13 +4,16 @@ module System.Linux.Netlink.Internal
     , queryOne
       
     , module System.Linux.Netlink.C
+    , module System.Linux.Netlink.Constants
     , module System.Linux.Netlink.Protocol
     ) where
 
 import Control.Applicative ((<$>))
 import Control.Monad (when)
+import Data.Bits (Bits, (.&.))
 
 import System.Linux.Netlink.C
+import System.Linux.Netlink.Constants
 import System.Linux.Netlink.Protocol
 
 bufferSize = 8192
@@ -29,8 +32,8 @@ recvMulti sock = do
              else (pkts ++) <$> recvMulti sock
         else return pkts
   where
-    isMulti = isFlagSet NlmFMulti . messageFlags . packetHeader
-    isDone  = (== NlmsgDone) . messageType . packetHeader
+    isMulti = isFlagSet fNLM_F_MULTI . messageFlags . packetHeader
+    isDone  = (== eNLMSG_DONE) . messageType . packetHeader
 
 query :: NetlinkSocket -> Packet -> IO [Packet]
 query sock req = do
@@ -44,3 +47,6 @@ queryOne sock req = do
     let len = length pkts
     when (len /= 1) $ fail ("Expected one packet, received " ++ show len)
     return $ head pkts
+
+isFlagSet :: Bits a => a -> a -> Bool
+isFlagSet f v = (f .&. v) == f
