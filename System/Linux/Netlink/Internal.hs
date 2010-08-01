@@ -16,6 +16,7 @@ import System.Linux.Netlink.C
 import System.Linux.Netlink.Constants
 import System.Linux.Netlink.Protocol
 
+bufferSize :: Num a => a
 bufferSize = 8192
 
 recvOne :: NetlinkSocket -> IO [Packet]
