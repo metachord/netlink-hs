@@ -5,6 +5,7 @@ module System.Linux.Netlink.C
     (
       NetlinkSocket
     , makeSocket
+    , closeSocket
     , sendmsg
     , recvmsg
 
@@ -20,7 +21,7 @@ import Data.ByteString.Internal (createAndTrim, toForeignPtr)
 import Data.Unique (hashUnique, newUnique)
 import Data.Word (Word32)
 import Foreign.C.Error (throwErrnoIf, throwErrnoIfMinus1, throwErrnoIfMinus1_)
-import Foreign.C.Types (CInt, CUInt, CUShort, CULong, CLong)
+import Foreign.C.Types
 import Foreign.ForeignPtr (touchForeignPtr, unsafeForeignPtrToPtr)
 import Foreign.Marshal.Array (withArrayLen)
 import Foreign.Marshal.Utils (with)
@@ -30,6 +31,7 @@ import System.Posix.Process (getProcessID)
 
 import System.Linux.Netlink.Constants (eAF_NETLINK)
 
+#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -57,6 +59,9 @@ makeSocket = do
         throwErrnoIfMinus1_ "makeSocket.bind" $ do
             {#call bind #} fd (castPtr addr) {#sizeof sockaddr_nl #}
     return $ NS fd
+
+closeSocket :: NetlinkSocket -> IO ()
+closeSocket (NS fd) = throwErrnoIfMinus1_ "closeSocket" $ {#call close #} fd
 
 sendmsg :: NetlinkSocket -> [ByteString] -> IO ()
 sendmsg (NS fd) bs =
