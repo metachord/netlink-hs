@@ -18,6 +18,7 @@ Library
   Other-modules:     System.Linux.Netlink.C
                      System.Linux.Netlink.Constants
                      System.Linux.Netlink.Protocol
+                     System.Linux.Netlink.Attributes
   Build-depends:     base >=4 && <5,
                      bytestring >=0.9 && <1.0,
                      cereal >=0.3 && <0.4,
