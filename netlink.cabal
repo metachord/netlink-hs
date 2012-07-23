@@ -1,6 +1,7 @@
 Name:                netlink
 Version:             0.1
 Synopsis:            Netlink communication for Haskell
+Description:         Library to comminicate with Linux kernel via Netlink
 Homepage:            http://netlink-hs.googlecode.com/
 License:             BSD3
 License-file:        LICENSE
@@ -10,7 +11,11 @@ Copyright:           Google Inc. 2010
 Stability:           Alpha
 Category:            System
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.6
+
+Source-repository head
+  type:       git
+  location:   https://github.com/metachord/netlink-hs
 
 Library
   Exposed-modules:   System.Linux.Netlink
@@ -28,4 +33,3 @@ Library
   Build-tools:       c2hs > 0.16
   Ghc-options:       -Wall -fwarn-tabs
   Ghc-prof-options:  -auto-all
-  Include-dirs:      cbits
