@@ -22,7 +22,8 @@ import Data.Unique (hashUnique, newUnique)
 import Data.Word (Word32)
 import Foreign.C.Error (throwErrnoIf, throwErrnoIfMinus1, throwErrnoIfMinus1_)
 import Foreign.C.Types
-import Foreign.ForeignPtr (touchForeignPtr, unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr (touchForeignPtr)
+import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Marshal.Array (withArrayLen)
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr (Ptr, castPtr, plusPtr)
@@ -72,7 +73,7 @@ sendmsg (NS fd) bs =
         {#call sendmsg as _sendmsg #} fd (castPtr msg) (0 :: CInt)
 
 recvmsg :: NetlinkSocket -> Int -> IO ByteString
-recvmsg (NS fd) len = 
+recvmsg (NS fd) len =
     createAndTrim len $ \ptr ->
     with (IoVec (castPtr ptr, len)) $ \vec ->
     with (MsgHdr (castPtr vec, 1)) $ \msg ->
