@@ -20,12 +20,11 @@ Library
                      System.Linux.Netlink.Protocol
                      System.Linux.Netlink.Attributes
   Build-depends:     base >=4 && <5,
-                     bytestring >=0.9 && <1.0,
+                     bytestring >=0.9,
                      cereal >=0.3 && <0.4,
-                     containers >=0.3 && <0.4,
-                     haskell98 >=1,
-                     monad-loops >=0.3 && <0.4,
-                     unix >=2.4 && <2.5
+                     containers >=0.3,
+                     monad-loops >=0.3,
+                     unix >=2.4
   Build-tools:       c2hs > 0.16
   Ghc-options:       -Wall -fwarn-tabs
   Ghc-prof-options:  -auto-all
